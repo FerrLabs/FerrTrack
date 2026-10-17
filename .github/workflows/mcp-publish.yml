@@ -62,7 +62,7 @@ jobs:
       matrix:
         include:
           - package: "@ferrtrack/mcp"
-            image: ferrtrack-mcp
+            image: ferrtrack-mcp-server
     permissions:
       contents: read
       packages: write
