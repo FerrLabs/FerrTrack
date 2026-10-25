@@ -32,6 +32,7 @@ export function registerSearchTools(server: McpServer) {
         .optional()
         .describe('Max hits to return (default 25).'),
     },
+    { readOnlyHint: true },
     async ({ q, limit }) => {
       const token = await getToken();
       const params = new URLSearchParams({ q });
@@ -47,6 +48,7 @@ export function registerSearchTools(server: McpServer) {
     'list_track_users',
     "List FerrTrack users in the caller's org — useful for resolving an `assignee_id` before calling create_issue or update_issue.",
     {},
+    { readOnlyHint: true },
     async () => {
       const token = await getToken();
       const users = await trackRequest<TrackUser[]>('/users', { token });

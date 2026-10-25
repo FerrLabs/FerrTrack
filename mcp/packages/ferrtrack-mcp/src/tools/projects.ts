@@ -22,6 +22,7 @@ export function registerProjectTools(server: McpServer) {
     'list_track_projects',
     "List FerrTrack projects in the caller's active organization.",
     {},
+    { readOnlyHint: true },
     async () => {
       const projects = await fetchProjects();
       return {
@@ -36,6 +37,7 @@ export function registerProjectTools(server: McpServer) {
     {
       project_slug: z.string().min(1).describe('Project slug'),
     },
+    { readOnlyHint: true },
     async ({ project_slug }) => {
       const token = await getToken();
       const project = await trackRequest<Project>(`/projects/${encodeURIComponent(project_slug)}`, {
