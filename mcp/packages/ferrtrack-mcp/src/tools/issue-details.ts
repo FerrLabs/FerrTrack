@@ -26,6 +26,7 @@ export function registerIssueDetailsTool(server: McpServer) {
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
     },
+    { readOnlyHint: true },
     async ({ issue_ref }) => {
       const token = await getToken();
       const issue = await trackRequest<IssueDetails>(`/issues/${encodeURIComponent(issue_ref)}`, {

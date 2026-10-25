@@ -65,6 +65,7 @@ export function registerIssueTools(server: McpServer) {
         .optional()
         .describe('Max issues to return (default 50).'),
     },
+    { readOnlyHint: true },
     async ({ project_slug, status, kind, assignee_id, limit }) => {
       const issues = await fetchProjectIssues(project_slug, { status, kind, assignee_id, limit });
       return {
@@ -149,6 +150,7 @@ export function registerIssueTools(server: McpServer) {
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
     },
+    { readOnlyHint: true },
     async ({ issue_ref }) => {
       const token = await getToken();
       const links = await trackRequest<unknown>(`/issues/${encodeURIComponent(issue_ref)}/links`, {
