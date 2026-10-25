@@ -10,6 +10,7 @@ interface Cycle {
   starts_at: string;
   ends_at: string;
   status: string;
+  created_by: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,21 +24,6 @@ interface CycleIssue {
 }
 
 export function registerCycleTools(server: McpServer) {
-  server.tool(
-    'get_cycle',
-    'Get a single FerrTrack cycle by id.',
-    {
-      cycle_id: z.string().min(1).describe('Cycle id'),
-    },
-    async ({ cycle_id }) => {
-      const token = await getToken();
-      const cycle = await trackRequest<Cycle>(`/cycles/${encodeURIComponent(cycle_id)}`, { token });
-      return {
-        content: [{ type: 'text' as const, text: toToolText(cycle) }],
-      };
-    },
-  );
-
   server.tool(
     'list_cycles',
     'List cycles (sprints) for a FerrTrack project.',
@@ -76,12 +62,12 @@ export function registerCycleTools(server: McpServer) {
 
   server.tool(
     'create_cycle',
-    'Create a new cycle in a project. Dates are ISO 8601 (YYYY-MM-DD).',
+    'Create a new cycle in a project. Dates are ISO 8601 datetimes (e.g. 2026-01-05T00:00:00Z).',
     {
       project_slug: z.string().min(1).describe('Project slug'),
       name: z.string().min(1).max(100),
-      starts_at: z.string().describe('ISO date — cycle start.'),
-      ends_at: z.string().describe('ISO date — cycle end.'),
+      starts_at: z.iso.datetime().describe('ISO datetime — cycle start.'),
+      ends_at: z.iso.datetime().describe('ISO datetime — cycle end.'),
     },
     async ({ project_slug, name, starts_at, ends_at }) => {
       const token = await getToken();
@@ -119,13 +105,12 @@ export function registerCycleTools(server: McpServer) {
 
   server.tool(
     'update_cycle',
-    'Patch a cycle — rename it, shift dates, or close it. Only fields you pass are touched.',
+    'Patch a cycle — rename it, or shift dates. Status is derived from the dates. Only fields you pass are touched.',
     {
       cycle_id: z.string().min(1).describe('Cycle id'),
       name: z.string().min(1).max(100).optional(),
-      starts_at: z.string().optional(),
-      ends_at: z.string().optional(),
-      status: z.enum(['planned', 'active', 'completed']).optional(),
+      starts_at: z.iso.datetime().optional(),
+      ends_at: z.iso.datetime().optional(),
     },
     async ({ cycle_id, ...patch }) => {
       const token = await getToken();

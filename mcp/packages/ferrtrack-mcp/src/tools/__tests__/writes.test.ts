@@ -54,9 +54,11 @@ describe('ferrtrack write tools', () => {
     mockFetch.mockResolvedValue(ok());
     const { registerIssueTools } = await import('../issues.js');
     const { registerCycleTools } = await import('../cycles.js');
+    const { registerMilestoneTools } = await import('../milestones.js');
     const { registerCommentTools } = await import('../comments.js');
     registerIssueTools(mockServer);
     registerCycleTools(mockServer);
+    registerMilestoneTools(mockServer);
     registerCommentTools(mockServer);
   });
 
@@ -129,5 +131,53 @@ describe('ferrtrack write tools', () => {
     const status = schemas.get('update_issue')!.status;
     expect(status.safeParse('closed').success).toBe(true);
     expect(status.safeParse('done').success).toBe(false);
+  });
+
+  it('does not expose get tools for routes the API does not serve', () => {
+    expect(handlers.has('get_cycle')).toBe(false);
+    expect(handlers.has('get_milestone')).toBe(false);
+  });
+
+  it('create_cycle requires ISO datetimes, since the API rejects plain dates', () => {
+    const { starts_at, ends_at } = schemas.get('create_cycle')!;
+    expect(starts_at.safeParse('2026-01-05T00:00:00Z').success).toBe(true);
+    expect(starts_at.safeParse('2026-01-05').success).toBe(false);
+    expect(ends_at.safeParse('2026-01-19').success).toBe(false);
+  });
+
+  it('update_cycle has no status field, since status is derived from dates', () => {
+    expect(schemas.get('update_cycle')).not.toHaveProperty('status');
+  });
+
+  it('create_milestone sends summary and target_date', async () => {
+    await handlers.get('create_milestone')!({
+      project_slug: 'web',
+      name: 'v1',
+      summary: 'first release',
+      target_date: '2026-03-01',
+    });
+
+    const call = lastCall();
+    expect(call.url).toBe(`${TRACK}/projects/web/milestones`);
+    expect(call.body).toEqual({ name: 'v1', summary: 'first release', target_date: '2026-03-01' });
+  });
+
+  it('update_milestone patches summary and target_date and nothing else', async () => {
+    await handlers.get('update_milestone')!({ milestone_id: 'm1', target_date: null });
+
+    const call = lastCall();
+    expect(call.url).toBe(`${TRACK}/milestones/m1`);
+    expect(call.method).toBe('PATCH');
+    expect(call.body).toEqual({ target_date: null });
+  });
+
+  it('update_milestone accepts the API status values only', () => {
+    const { status } = schemas.get('update_milestone')!;
+    for (const ok of ['planned', 'in_progress', 'shipped', 'canceled']) {
+      expect(status.safeParse(ok).success).toBe(true);
+    }
+    for (const bad of ['open', 'completed', 'cancelled']) {
+      expect(status.safeParse(bad).success).toBe(false);
+    }
   });
 });
