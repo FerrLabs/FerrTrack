@@ -10,8 +10,8 @@ const handlers = new Map<string, Handler>();
 const schemas = new Map<string, Record<string, ZodTypeAny>>();
 const mockServer = {
   tool: vi.fn(
-    (name: string, _desc: string, schema: Record<string, ZodTypeAny>, handler: Handler) => {
-      handlers.set(name, handler);
+    (name: string, _desc: string, schema: Record<string, ZodTypeAny>, ...rest: unknown[]) => {
+      handlers.set(name, rest[rest.length - 1] as Handler);
       schemas.set(name, schema);
     },
   ),

@@ -18,6 +18,7 @@ export function registerCommentTools(server: McpServer) {
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
     },
+    { readOnlyHint: true },
     async ({ issue_ref }) => {
       const token = await getToken();
       const comments = await trackRequest<Comment[]>(
@@ -76,6 +77,7 @@ export function registerCommentTools(server: McpServer) {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
       comment_id: z.string().min(1).describe('Comment id'),
     },
+    { destructiveHint: true },
     async ({ issue_ref, comment_id }) => {
       const token = await getToken();
       await trackRequest<void>(

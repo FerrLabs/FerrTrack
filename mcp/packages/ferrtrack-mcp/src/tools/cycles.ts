@@ -30,6 +30,7 @@ export function registerCycleTools(server: McpServer) {
     {
       project_slug: z.string().min(1).describe('Project slug'),
     },
+    { readOnlyHint: true },
     async ({ project_slug }) => {
       const token = await getToken();
       const cycles = await trackRequest<Cycle[]>(
@@ -48,6 +49,7 @@ export function registerCycleTools(server: McpServer) {
     {
       cycle_id: z.string().min(1).describe('Cycle id'),
     },
+    { readOnlyHint: true },
     async ({ cycle_id }) => {
       const token = await getToken();
       const issues = await trackRequest<CycleIssue[]>(
@@ -135,6 +137,7 @@ export function registerCycleTools(server: McpServer) {
     {
       cycle_id: z.string().min(1).describe('Cycle id'),
     },
+    { destructiveHint: true },
     async ({ cycle_id }) => {
       const token = await getToken();
       await trackRequest<void>(`/cycles/${encodeURIComponent(cycle_id)}`, {

@@ -20,6 +20,7 @@ export function registerMilestoneTools(server: McpServer) {
     {
       project_slug: z.string().min(1).describe('Project slug'),
     },
+    { readOnlyHint: true },
     async ({ project_slug }) => {
       const token = await getToken();
       const milestones = await trackRequest<Milestone[]>(
@@ -93,6 +94,7 @@ export function registerMilestoneTools(server: McpServer) {
     {
       milestone_id: z.string().min(1).describe('Milestone id'),
     },
+    { destructiveHint: true },
     async ({ milestone_id }) => {
       const token = await getToken();
       await trackRequest<void>(`/milestones/${encodeURIComponent(milestone_id)}`, {
