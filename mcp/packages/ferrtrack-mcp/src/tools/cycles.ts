@@ -66,8 +66,8 @@ export function registerCycleTools(server: McpServer) {
     {
       project_slug: z.string().min(1).describe('Project slug'),
       name: z.string().min(1).max(100),
-      starts_at: z.iso.datetime().describe('ISO datetime — cycle start.'),
-      ends_at: z.iso.datetime().describe('ISO datetime — cycle end.'),
+      starts_at: z.iso.datetime({ offset: true }).describe('ISO datetime — cycle start.'),
+      ends_at: z.iso.datetime({ offset: true }).describe('ISO datetime — cycle end.'),
     },
     async ({ project_slug, name, starts_at, ends_at }) => {
       const token = await getToken();
@@ -109,8 +109,8 @@ export function registerCycleTools(server: McpServer) {
     {
       cycle_id: z.string().min(1).describe('Cycle id'),
       name: z.string().min(1).max(100).optional(),
-      starts_at: z.iso.datetime().optional(),
-      ends_at: z.iso.datetime().optional(),
+      starts_at: z.iso.datetime({ offset: true }).optional(),
+      ends_at: z.iso.datetime({ offset: true }).optional(),
     },
     async ({ cycle_id, ...patch }) => {
       const token = await getToken();

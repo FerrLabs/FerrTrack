@@ -141,6 +141,7 @@ describe('ferrtrack write tools', () => {
   it('create_cycle requires ISO datetimes, since the API rejects plain dates', () => {
     const { starts_at, ends_at } = schemas.get('create_cycle')!;
     expect(starts_at.safeParse('2026-01-05T00:00:00Z').success).toBe(true);
+    expect(starts_at.safeParse('2026-01-05T00:00:00+02:00').success).toBe(true);
     expect(starts_at.safeParse('2026-01-05').success).toBe(false);
     expect(ends_at.safeParse('2026-01-19').success).toBe(false);
   });
