@@ -21,10 +21,8 @@ const READ_ONLY = [
   'list_issue_links',
   'list_issue_comments',
   'list_cycles',
-  'get_cycle',
   'list_cycle_issues',
   'list_milestones',
-  'get_milestone',
   'list_track_users',
   'search_track',
 ];
