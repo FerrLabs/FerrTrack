@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.13.4] - 2026-10-27
+
+### Bug Fixes
+
+- fix(deps): update dependency @ferrlabs/mcp-core to ^10.14.3 (#20)
+
 ## [10.13.3] - 2026-10-26
 
 ### Bug Fixes

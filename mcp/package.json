@@ -1,7 +1,7 @@
 {
   "name": "@ferrtrack/mcp-workspace",
   "private": true,
-  "version": "10.13.3",
+  "version": "10.13.4",
   "description": "FerrTrack MCP servers: workspace root",
   "license": "MPL-2.0",
   "type": "module",
