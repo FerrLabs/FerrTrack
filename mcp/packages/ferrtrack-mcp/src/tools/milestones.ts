@@ -6,33 +6,14 @@ interface Milestone {
   id: string;
   project_id: string;
   name: string;
-  description: string | null;
-  due_at: string | null;
+  summary: string | null;
+  target_date: string | null;
   status: string;
   created_at: string;
   updated_at: string;
 }
 
 export function registerMilestoneTools(server: McpServer) {
-  server.tool(
-    'get_milestone',
-    'Get a single FerrTrack milestone by id.',
-    {
-      milestone_id: z.string().min(1).describe('Milestone id'),
-    },
-    { readOnlyHint: true },
-    async ({ milestone_id }) => {
-      const token = await getToken();
-      const milestone = await trackRequest<Milestone>(
-        `/milestones/${encodeURIComponent(milestone_id)}`,
-        { token },
-      );
-      return {
-        content: [{ type: 'text' as const, text: toToolText(milestone) }],
-      };
-    },
-  );
-
   server.tool(
     'list_milestones',
     'List milestones for a FerrTrack project.',
@@ -54,14 +35,14 @@ export function registerMilestoneTools(server: McpServer) {
 
   server.tool(
     'create_milestone',
-    'Create a milestone on a project. Due date is optional.',
+    'Create a milestone on a project. Target date is optional.',
     {
       project_slug: z.string().min(1).describe('Project slug'),
       name: z.string().min(1).max(100),
-      description: z.string().max(2000).optional(),
-      due_at: z.string().optional().describe('ISO date.'),
+      summary: z.string().max(2000).optional(),
+      target_date: z.iso.date().optional().describe('ISO date (YYYY-MM-DD).'),
     },
-    async ({ project_slug, name, description, due_at }) => {
+    async ({ project_slug, name, summary, target_date }) => {
       const token = await getToken();
       const milestone = await trackRequest<Milestone>(
         `/projects/${encodeURIComponent(project_slug)}/milestones`,
@@ -70,8 +51,8 @@ export function registerMilestoneTools(server: McpServer) {
           method: 'POST',
           body: {
             name,
-            description: description ?? null,
-            due_at: due_at ?? null,
+            summary: summary ?? null,
+            target_date: target_date ?? null,
           },
         },
       );
@@ -83,13 +64,13 @@ export function registerMilestoneTools(server: McpServer) {
 
   server.tool(
     'update_milestone',
-    'Patch a milestone — rename, retitle description, shift due date, flip status.',
+    'Patch a milestone — rename, edit summary, shift target date, flip status.',
     {
       milestone_id: z.string().min(1).describe('Milestone id'),
       name: z.string().min(1).max(100).optional(),
-      description: z.string().max(2000).nullable().optional(),
-      due_at: z.string().nullable().optional(),
-      status: z.enum(['open', 'completed', 'cancelled']).optional(),
+      summary: z.string().max(2000).nullable().optional(),
+      target_date: z.iso.date().nullable().optional(),
+      status: z.enum(['planned', 'in_progress', 'shipped', 'canceled']).optional(),
     },
     async ({ milestone_id, ...patch }) => {
       const token = await getToken();
