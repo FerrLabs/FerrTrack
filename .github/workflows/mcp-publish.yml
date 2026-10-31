@@ -94,7 +94,7 @@ jobs:
             PACKAGE=${{ matrix.package }}
           tags: |
             ghcr.io/ferrlabs/${{ matrix.image }}:${{ steps.ver.outputs.version }}
-            ghcr.io/ferrlabs/${{ matrix.image }}:latest
+            ${{ github.event_name == 'release' && format('ghcr.io/ferrlabs/{0}:latest', matrix.image) || '' }}
           labels: |
             org.opencontainers.image.source=https://github.com/FerrLabs/FerrTrack
             org.opencontainers.image.version=${{ steps.ver.outputs.version }}
