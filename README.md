@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1><img src=".github/logo.svg" alt="" height="40" align="center"> FerrTrack</h1>
+<h1><img src=".github/logo.svg" alt="" width="40" height="40" align="center"> FerrTrack</h1>
 
 **Manage FerrTrack issues, cycles and projects from an AI assistant.**
 
