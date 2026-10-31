@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.13.5] - 2026-10-31
+
+### Bug Fixes
+
+- fix(ci): only tag latest on release and pin the node base image digest (#27)
+
 ## [10.13.4] - 2026-10-27
 
 ### Bug Fixes
