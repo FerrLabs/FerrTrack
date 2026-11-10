@@ -6,6 +6,7 @@ try {
   await runMcp({
     name: 'ferrtrack',
     version: readPackageVersion(import.meta.url),
+    scopes: ['issues:read', 'issues:write'],
     register,
   });
 } catch (err: unknown) {
