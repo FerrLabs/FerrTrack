@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.13.7] - 2026-11-10
+
+### Refactoring
+
+- refactor: apply sonar quick wins (#36)
+
 ## [10.13.6] - 2026-11-01
 
 ### Bug Fixes
