@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.13.10] - 2026-11-13
+
+### Bug Fixes
+
+- fix(mcp): request the FerrTrack scopes when authorizing (#39)
+
 ## [10.13.9] - 2026-11-12
 
 ### Bug Fixes
