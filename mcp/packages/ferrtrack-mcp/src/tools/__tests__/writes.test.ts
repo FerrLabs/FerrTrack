@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ZodTypeAny } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
 import type { McpServer } from '@ferrlabs/mcp-core';
 
 process.env.FERRLABS_API_TOKEN = 'test-token';
@@ -103,6 +103,117 @@ describe('ferrtrack write tools', () => {
   it('update_issue can clear an assignee, which is not the same as omitting it', async () => {
     await handlers.get('update_issue')!({ issue_ref: 'FT-12', assignee_id: null });
     expect(lastCall().body).toEqual({ assignee_id: null });
+  });
+
+  const CYCLE = '3f2b6c1e-8d4a-4b7e-9a10-5c6d7e8f9a0b';
+  const MILESTONE = '7a1d2e3f-4b5c-4d6e-8f70-91a2b3c4d5e6';
+  const PARENT = 'b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e';
+
+  function parseUpdate(input: Record<string, unknown>) {
+    return z.object(schemas.get('update_issue')!).safeParse({ issue_ref: 'FT-12', ...input });
+  }
+
+  function parseCreate(input: Record<string, unknown>) {
+    return z.object(schemas.get('create_issue')!).safeParse({
+      project_slug: 'web',
+      title: 'Bug',
+      ...input,
+    });
+  }
+
+  it('update_issue forwards priority, estimate, cycle, milestone, due date and parent when set', async () => {
+    const patch = {
+      priority: 'urgent',
+      estimate: 0,
+      cycle_id: CYCLE,
+      milestone_id: MILESTONE,
+      due_date: '2026-12-01',
+      parent_id: PARENT,
+    };
+    await handlers.get('update_issue')!({ issue_ref: 'FT-12', ...patch });
+    expect(lastCall().body).toEqual(patch);
+  });
+
+  it('update_issue sends null to clear estimate, cycle, milestone, due date and parent', async () => {
+    const cleared = {
+      estimate: null,
+      cycle_id: null,
+      milestone_id: null,
+      due_date: null,
+      parent_id: null,
+    };
+    await handlers.get('update_issue')!({ issue_ref: 'FT-12', ...cleared });
+    expect(lastCall().body).toEqual(cleared);
+  });
+
+  it('update_issue leaves the new fields out of the body when they are not passed', async () => {
+    await handlers.get('update_issue')!({ issue_ref: 'FT-12', title: 'New' });
+    expect(lastCall().body).toEqual({ title: 'New' });
+  });
+
+  it('update_issue schema accepts every API priority and rejects anything else', () => {
+    for (const priority of ['none', 'low', 'medium', 'high', 'urgent']) {
+      expect(parseUpdate({ priority }).success).toBe(true);
+    }
+    for (const priority of ['critical', 'URGENT', '', null]) {
+      expect(parseUpdate({ priority }).success).toBe(false);
+    }
+  });
+
+  it('update_issue does not let priority be cleared with null, the API has no such state', () => {
+    expect(parseUpdate({ priority: null }).success).toBe(false);
+  });
+
+  it('update_issue schema bounds estimate to integers 0-1000 and allows null', () => {
+    for (const estimate of [0, 1, 1000, null]) {
+      expect(parseUpdate({ estimate }).success).toBe(true);
+    }
+    for (const estimate of [-1, 1001, 2.5, '5']) {
+      expect(parseUpdate({ estimate }).success).toBe(false);
+    }
+  });
+
+  it('update_issue schema requires UUIDs for cycle, milestone and parent, and ISO dates', () => {
+    for (const field of ['cycle_id', 'milestone_id', 'parent_id']) {
+      expect(parseUpdate({ [field]: CYCLE }).success).toBe(true);
+      expect(parseUpdate({ [field]: 'FT-12' }).success).toBe(false);
+    }
+    expect(parseUpdate({ due_date: '2026-12-01' }).success).toBe(true);
+    expect(parseUpdate({ due_date: '12/01/2026' }).success).toBe(false);
+    expect(parseUpdate({ due_date: '2026-13-40' }).success).toBe(false);
+  });
+
+  it('create_issue sends priority, estimate, due date and parent only when provided', async () => {
+    await handlers.get('create_issue')!({
+      project_slug: 'web',
+      title: 'Bug',
+      priority: 'high',
+      estimate: 3,
+      due_date: '2026-12-01',
+      parent_id: PARENT,
+    });
+    expect(lastCall().body).toEqual({
+      title: 'Bug',
+      body: '',
+      kind: 'feat',
+      labels: [],
+      assignee_id: null,
+      priority: 'high',
+      estimate: 3,
+      due_date: '2026-12-01',
+      parent_id: PARENT,
+    });
+  });
+
+  it('create_issue schema rejects an unknown priority and an out-of-range estimate', () => {
+    expect(parseCreate({ priority: 'critical' }).success).toBe(false);
+    expect(parseCreate({ estimate: 1001 }).success).toBe(false);
+    expect(parseCreate({ priority: 'low', estimate: 1000 }).success).toBe(true);
+  });
+
+  it('create_issue does not accept null for the new fields, since there is nothing to clear', () => {
+    expect(parseCreate({ estimate: null }).success).toBe(false);
+    expect(parseCreate({ priority: null }).success).toBe(false);
   });
 
   it('delete_cycle uses DELETE on the cycle and names it back', async () => {

@@ -1,35 +1,19 @@
 import { z } from 'zod';
 import { getToken, type McpServer, toToolText } from '@ferrlabs/mcp-core';
 import { trackRequest } from '../api-base.js';
-
-interface IssueDetails {
-  id: string;
-  ref: string;
-  project_id: string;
-  title: string;
-  body: string;
-  status: string;
-  kind: string;
-  labels: string[];
-  assignee_id: string | null;
-  author_id: string;
-  cycle_id: string | null;
-  milestone_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { Issue } from './issue-model.js';
 
 export function registerIssueDetailsTool(server: McpServer) {
   server.tool(
     'get_issue',
-    'Get the full content of a FerrTrack issue by its ref (e.g. "FT-12") — title, body, status, kind, labels, assignee.',
+    'Get the full content of a FerrTrack issue by its ref (e.g. "FT-12") — title, body, status, kind, priority, estimate, due date, labels, assignee, and the cycle_id, milestone_id and parent_id it belongs to.',
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
     },
     { readOnlyHint: true },
     async ({ issue_ref }) => {
       const token = await getToken();
-      const issue = await trackRequest<IssueDetails>(`/issues/${encodeURIComponent(issue_ref)}`, {
+      const issue = await trackRequest<Issue>(`/issues/${encodeURIComponent(issue_ref)}`, {
         token,
       });
       return {
