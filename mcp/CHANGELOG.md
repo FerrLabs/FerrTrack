@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.14.0] - 2026-11-15
+
+### Features
+
+- feat(mcp): let issue tools set cycle, milestone, priority and estimate (#47)
+
 ## [10.13.11] - 2026-11-13
 
 ### Bug Fixes
