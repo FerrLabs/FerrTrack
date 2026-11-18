@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.14.1] - 2026-11-18
+
+### Bug Fixes
+
+- fix(mcp): accept connected-app org tokens at the bearer gate (#51)
+
 ## [10.14.0] - 2026-11-15
 
 ### Features
