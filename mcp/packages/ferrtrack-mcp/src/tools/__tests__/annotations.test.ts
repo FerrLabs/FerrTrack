@@ -12,7 +12,7 @@ const mockServer = {
   }),
 } as unknown as McpServer;
 
-const DESTRUCTIVE = ['delete_issue_comment', 'delete_cycle', 'delete_milestone'];
+const DESTRUCTIVE = ['delete_issue', 'delete_issue_comment', 'delete_cycle', 'delete_milestone'];
 const READ_ONLY = [
   'list_track_projects',
   'get_project',

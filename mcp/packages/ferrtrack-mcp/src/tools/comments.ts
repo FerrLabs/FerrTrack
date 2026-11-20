@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getToken, type McpServer, toToolText } from '@ferrlabs/mcp-core';
 import { trackRequest } from '../api-base.js';
+import { withDeleteErrors } from './delete-errors.js';
 
 interface Comment {
   id: string;
@@ -72,7 +73,7 @@ export function registerCommentTools(server: McpServer) {
 
   server.tool(
     'delete_issue_comment',
-    'Delete a comment you authored on a FerrTrack issue.',
+    'Permanently delete a comment on a FerrTrack issue. This cannot be undone. Allowed for the comment author or an organization owner or admin; organization tokens can only delete comments they posted.',
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
       comment_id: z.string().min(1).describe('Comment id'),
@@ -80,9 +81,11 @@ export function registerCommentTools(server: McpServer) {
     { destructiveHint: true },
     async ({ issue_ref, comment_id }) => {
       const token = await getToken();
-      await trackRequest<void>(
-        `/issues/${encodeURIComponent(issue_ref)}/comments/${encodeURIComponent(comment_id)}`,
-        { token, method: 'DELETE' },
+      await withDeleteErrors(() =>
+        trackRequest<void>(
+          `/issues/${encodeURIComponent(issue_ref)}/comments/${encodeURIComponent(comment_id)}`,
+          { token, method: 'DELETE' },
+        ),
       );
       return {
         content: [{ type: 'text' as const, text: `Comment ${comment_id} deleted.` }],
