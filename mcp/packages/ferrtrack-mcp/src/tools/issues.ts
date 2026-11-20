@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getToken, type McpServer, toToolText } from '@ferrlabs/mcp-core';
 import { trackRequest } from '../api-base.js';
+import { buildIssuePage, type IssuePage } from './issue-page.js';
 import {
   dueDateSchema,
   estimateSchema,
@@ -9,27 +10,37 @@ import {
   prioritySchema,
 } from './issue-model.js';
 
+type IssueStatusFilter = 'open' | 'in_progress' | 'review' | 'closed' | 'all';
+
 interface IssueFilters {
-  status?: string;
+  status?: IssueStatusFilter;
   kind?: string;
   assignee_id?: string;
   limit?: number;
+  offset?: number;
 }
 
-export async function fetchProjectIssues(
+const DEFAULT_LIMIT = 50;
+const API_MAX_LIMIT = 200;
+
+export async function listProjectIssues(
   projectSlug: string,
   filters: IssueFilters = {},
-): Promise<Issue[]> {
+): Promise<IssuePage> {
   const token = await getToken();
-  const params = new URLSearchParams();
-  if (filters.status) params.set('status', filters.status);
+  const limit = filters.limit ?? DEFAULT_LIMIT;
+  const offset = filters.offset ?? 0;
+  const fetchLimit = Math.min(limit + 1, API_MAX_LIMIT);
+  const params = new URLSearchParams({
+    project: projectSlug,
+    status: filters.status ?? 'open',
+    limit: String(fetchLimit),
+    offset: String(offset),
+  });
   if (filters.kind) params.set('kind', filters.kind);
   if (filters.assignee_id) params.set('assignee', filters.assignee_id);
-  if (filters.limit !== undefined) params.set('limit', String(filters.limit));
-  const qs = params.toString() ? `?${params.toString()}` : '';
-  return trackRequest<Issue[]>(`/projects/${encodeURIComponent(projectSlug)}/issues${qs}`, {
-    token,
-  });
+  const items = await trackRequest<Issue[]>(`/issues?${params.toString()}`, { token });
+  return buildIssuePage({ items, offset, limit, fetchLimit });
 }
 
 function definedOnly(fields: Record<string, unknown>): Record<string, unknown> {
@@ -39,13 +50,13 @@ function definedOnly(fields: Record<string, unknown>): Record<string, unknown> {
 export function registerIssueTools(server: McpServer) {
   server.tool(
     'list_track_issues',
-    'List FerrTrack issues in a project. Filter by status (open|in_progress|review|closed|all), kind (bug|feat|chore|docs), assignee, limit. Each issue includes priority, estimate, due_date, cycle_id and milestone_id.',
+    'List FerrTrack issues in a project as compact rows (ref, title, status, assignee_id, priority, updated_at; use get_issue for the rest). Defaults to open issues, which excludes closed ones: pass status=closed or status=all to see them. Filter by status (open|in_progress|review|closed|all), kind (bug|feat|chore|docs), assignee. Results are paged: when has_more is true, call again with offset=next_offset. A page is cut to fit the response size limit and says so in `notice`.',
     {
       project_slug: z.string().min(1).describe('Project slug'),
       status: z
         .enum(['open', 'in_progress', 'review', 'closed', 'all'])
         .optional()
-        .describe('Filter by issue status (default open).'),
+        .describe('Filter by issue status (default open: closed issues are excluded).'),
       kind: z.enum(['bug', 'feat', 'chore', 'docs']).optional().describe('Filter by issue kind.'),
       assignee_id: z
         .string()
@@ -57,13 +68,25 @@ export function registerIssueTools(server: McpServer) {
         .min(1)
         .max(200)
         .optional()
-        .describe('Max issues to return (default 50).'),
+        .describe('Max issues per page (default 50).'),
+      offset: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe('Issues to skip (default 0). Pass next_offset from the previous page.'),
     },
     { readOnlyHint: true },
-    async ({ project_slug, status, kind, assignee_id, limit }) => {
-      const issues = await fetchProjectIssues(project_slug, { status, kind, assignee_id, limit });
+    async ({ project_slug, status, kind, assignee_id, limit, offset }) => {
+      const page = await listProjectIssues(project_slug, {
+        status,
+        kind,
+        assignee_id,
+        limit,
+        offset,
+      });
       return {
-        content: [{ type: 'text' as const, text: toToolText(issues) }],
+        content: [{ type: 'text' as const, text: toToolText(page) }],
       };
     },
   );
