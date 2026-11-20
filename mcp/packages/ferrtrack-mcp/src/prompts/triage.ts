@@ -22,6 +22,8 @@ export function registerTriagePrompt(server: McpServer) {
                 limit ? ` and limit=${limit}` : ''
               } if the resource is not attached.`,
               '',
+              'Results are paged: while `has_more` is true, call `list_track_issues` again with `offset` set to `next_offset` until the whole backlog has been read.',
+              '',
               'For each issue, propose one of: keep as is, change kind, change status, assign, or close as stale. Give the reason in one sentence, and say which field you would set.',
               '',
               'Group the output by decision rather than listing issues in order, so the ones needing the same action can be applied together. Flag separately any issue whose title or body does not say what would make it done: those need a question back to the author, not a triage decision.',

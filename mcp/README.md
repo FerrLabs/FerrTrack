@@ -33,6 +33,8 @@ Tools marked **destructive** are irreversible or high-impact. MCP clients should
 | `list_milestones`, `create_milestone`, `update_milestone`, `delete_milestone`                         | `delete_milestone` is **destructive**     |
 | `list_track_users`, `search_track`                                                                    | read                                      |
 
+`list_track_issues` returns open issues only unless `status` is `closed` or `all`, as compact rows (`ref`, `title`, `status`, `assignee_id`, `priority`, `updated_at`). It pages with `limit` and `offset`: while `has_more` is true, call again with `offset` set to `next_offset`. A page that would exceed the response size limit is cut at a row boundary and says so in `notice`.
+
 ## Resources and prompts
 
 | Kind     | Name                                | What it does                                                                                                  |

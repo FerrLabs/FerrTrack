@@ -1,5 +1,5 @@
 import { ResourceTemplate, toToolText, type McpServer } from '@ferrlabs/mcp-core';
-import { fetchProjectIssues } from '../tools/issues.js';
+import { listProjectIssues } from '../tools/issues.js';
 import { fetchProjects } from '../tools/projects.js';
 
 export function registerIssueResources(server: McpServer) {
@@ -20,13 +20,13 @@ export function registerIssueResources(server: McpServer) {
     {
       title: 'Project issues',
       description:
-        'Open issues in one FerrTrack project, newest first. Use the list_track_issues tool to filter by kind, assignee or a different status.',
+        'Open issues in one FerrTrack project, first page of compact rows. Use the list_track_issues tool to page, or to filter by kind, assignee or a different status.',
       mimeType: 'application/json',
     },
     async (uri, { slug }) => {
-      const issues = await fetchProjectIssues(String(slug));
+      const page = await listProjectIssues(String(slug));
       return {
-        contents: [{ uri: uri.href, mimeType: 'application/json', text: toToolText(issues) }],
+        contents: [{ uri: uri.href, mimeType: 'application/json', text: toToolText(page) }],
       };
     },
   );
