@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.15.0] - 2026-11-20
+
+### Features
+
+- feat(mcp): add delete_issue and explain delete_issue_comment errors (#54)
+
 ## [10.14.2] - 2026-11-20
 
 ### Bug Fixes
