@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getToken, type McpServer, toToolText } from '@ferrlabs/mcp-core';
 import { trackRequest } from '../api-base.js';
+import { withDeleteErrors } from './delete-errors.js';
 import { buildIssuePage, type IssuePage } from './issue-page.js';
 import {
   dueDateSchema,
@@ -219,6 +220,27 @@ export function registerIssueTools(server: McpServer) {
       });
       return {
         content: [{ type: 'text' as const, text: toToolText(links) }],
+      };
+    },
+  );
+
+  server.tool(
+    'delete_issue',
+    'Permanently delete a FerrTrack issue and everything attached to it. This cannot be undone and is not the same as closing or archiving. Only organization owners and admins authenticated as a user can do it; organization tokens and connected apps are always refused.',
+    {
+      issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
+    },
+    { destructiveHint: true },
+    async ({ issue_ref }) => {
+      const token = await getToken();
+      await withDeleteErrors(() =>
+        trackRequest<void>(`/issues/${encodeURIComponent(issue_ref)}/permanent`, {
+          token,
+          method: 'DELETE',
+        }),
+      );
+      return {
+        content: [{ type: 'text' as const, text: `Issue ${issue_ref} permanently deleted.` }],
       };
     },
   );
