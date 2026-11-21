@@ -1,6 +1,6 @@
 ARG PACKAGE=@ferrtrack/mcp
 
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS build
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 ARG PACKAGE
 WORKDIR /app
 ENV HUSKY=0 \
@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --offline
 RUN pnpm run build
 RUN pnpm --filter "${PACKAGE}" deploy --prod --legacy /out
 
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5
 WORKDIR /app
 ENV NODE_ENV=production \
     FERRLABS_MCP_MODE=http \
