@@ -35,7 +35,7 @@ Tools marked **destructive** are irreversible or high-impact. MCP clients should
 
 `delete_issue` hard-deletes an issue (`DELETE /issues/{ref}/permanent`) and is permanent, unlike closing it. It needs an organization owner or admin authenticated as a user: organization tokens and connected apps always get `ORG_ADMIN_REQUIRED`. `delete_issue_comment` is allowed for the comment author or an owner or admin, and organization tokens can only delete comments they posted. Both map the API error codes (`ORG_ADMIN_REQUIRED`, `TOKEN_SCOPE_REQUIRED`, `ISSUE_NOT_FOUND`, `COMMENT_NOT_FOUND`, `COMMENT_NOT_OWNER`, `IDENTITY_PLANE_UNAVAILABLE`) to explanatory errors.
 
-`list_track_issues` returns open issues only unless `status` is `closed` or `all`, as compact rows (`ref`, `title`, `status`, `assignee_id`, `priority`, `updated_at`). It pages with `limit` and `offset`: while `has_more` is true, call again with `offset` set to `next_offset`. A page that would exceed the response size limit is cut at a row boundary and says so in `notice`.
+`list_track_issues` returns open issues only unless `status` is `closed` or `all`, as compact rows (`ref`, `title`, `status`, `assignee_id`, `priority`, `updated_at`). It pages with `limit` and `offset`: while `has_more` is true, call again with `offset` set to `next_offset`. `total` is the count of issues matching the filters across all pages, taken from the API's `X-Total-Count` header; it is omitted when the header is missing or not a number. A page that would exceed the response size limit is cut at a row boundary and says so in `notice`.
 
 ## Resources and prompts
 

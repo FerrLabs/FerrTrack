@@ -39,15 +39,16 @@ function issue(n: number, status = 'open'): Issue {
   };
 }
 
-function respond(body: unknown): Response {
+function respond(body: unknown, headers: Record<string, string> = {}): Response {
   return {
     ok: true,
     status: 200,
+    headers: new Headers(headers),
     text: () => Promise.resolve(JSON.stringify(body)),
   } as unknown as Response;
 }
 
-function serveBacklog(all: Issue[]): void {
+function serveBacklog(all: Issue[], headers: Record<string, string> = {}): void {
   mockFetch.mockImplementation((url: string) => {
     const params = new URL(url).searchParams;
     const status = params.get('status');
@@ -56,7 +57,7 @@ function serveBacklog(all: Issue[]): void {
     const matching = all.filter(
       (i) => status === 'all' || (status === 'open' ? i.status !== 'closed' : i.status === status),
     );
-    return Promise.resolve(respond(matching.slice(offset, offset + Math.min(limit, 200))));
+    return Promise.resolve(respond(matching.slice(offset, offset + Math.min(limit, 200)), headers));
   });
 }
 
@@ -72,6 +73,7 @@ async function call(params: Record<string, unknown>) {
     has_more: boolean;
     next_offset: number | null;
     notice?: string;
+    total?: number;
   };
 }
 
@@ -199,4 +201,51 @@ describe('list_track_issues', () => {
     expect(seen).toEqual(backlog.map((i) => i.ref));
     expect(notices[0]).toMatch(/response size limit/);
   });
+
+  it('reports the X-Total-Count header as total without touching paging', async () => {
+    serveBacklog(
+      Array.from({ length: 12 }, (_, i) => issue(i + 1)),
+      { 'X-Total-Count': '40' },
+    );
+    const page = await call({ limit: 10 });
+
+    expect(page).toMatchObject({ total: 40, count: 10, has_more: true, next_offset: 10 });
+  });
+
+  it('reports total 0 for an empty result', async () => {
+    serveBacklog([], { 'X-Total-Count': '0' });
+    const page = await call({});
+
+    expect(page.total).toBe(0);
+  });
+
+  it('keeps the limit=200 probe and takes total from the first response', async () => {
+    serveBacklog(
+      Array.from({ length: 200 }, (_, i) => issue(i + 1)),
+      { 'X-Total-Count': '200' },
+    );
+    const page = await call({ limit: 200 });
+
+    expect(page).toMatchObject({ total: 200, has_more: false, next_offset: null });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('omits total when the header is absent', async () => {
+    serveBacklog([issue(1)]);
+    const page = await call({});
+
+    expect(page).not.toHaveProperty('total');
+    expect(page.count).toBe(1);
+  });
+
+  it.each(['abc', '', '-3', '4.5', '12abc', '99999999999999999999'])(
+    'omits total when the header is %j',
+    async (value) => {
+      serveBacklog([issue(1)], { 'X-Total-Count': value });
+      const page = await call({});
+
+      expect(page).not.toHaveProperty('total');
+      expect(page.count).toBe(1);
+    },
+  );
 });

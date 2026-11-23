@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { getToken, type McpServer, toToolText } from '@ferrlabs/mcp-core';
-import { trackRequest } from '../api-base.js';
+import { trackRequest, trackRequestWithHeaders } from '../api-base.js';
 import { withDeleteErrors } from './delete-errors.js';
-import { buildIssuePage, type IssuePage } from './issue-page.js';
+import { buildIssuePage, type IssuePage, parseTotalCount } from './issue-page.js';
 import {
   dueDateSchema,
   estimateSchema,
@@ -31,7 +31,7 @@ export async function listProjectIssues(
   const token = await getToken();
   const limit = filters.limit ?? DEFAULT_LIMIT;
   const offset = filters.offset ?? 0;
-  const fetchRows = async (rowOffset: number, rowLimit: number): Promise<Issue[]> => {
+  const fetchRows = async (rowOffset: number, rowLimit: number) => {
     const params = new URLSearchParams({
       project: projectSlug,
       status: filters.status ?? 'open',
@@ -40,13 +40,19 @@ export async function listProjectIssues(
     });
     if (filters.kind) params.set('kind', filters.kind);
     if (filters.assignee_id) params.set('assignee', filters.assignee_id);
-    return trackRequest<Issue[]>(`/issues?${params.toString()}`, { token });
+    return trackRequestWithHeaders<Issue[]>(`/issues?${params.toString()}`, { token });
   };
 
-  const items = await fetchRows(offset, Math.min(limit + 1, API_MAX_LIMIT));
+  const first = await fetchRows(offset, Math.min(limit + 1, API_MAX_LIMIT));
+  const items = first.data;
   const needsProbe = limit >= API_MAX_LIMIT && items.length === API_MAX_LIMIT;
-  const probe = needsProbe ? await fetchRows(offset + API_MAX_LIMIT, 1) : [];
-  return buildIssuePage({ items: [...items, ...probe], offset, limit });
+  const probe = needsProbe ? (await fetchRows(offset + API_MAX_LIMIT, 1)).data : [];
+  return buildIssuePage({
+    items: [...items, ...probe],
+    offset,
+    limit,
+    total: parseTotalCount(first.headers.get('x-total-count')),
+  });
 }
 
 function definedOnly(fields: Record<string, unknown>): Record<string, unknown> {
@@ -56,7 +62,7 @@ function definedOnly(fields: Record<string, unknown>): Record<string, unknown> {
 export function registerIssueTools(server: McpServer) {
   server.tool(
     'list_track_issues',
-    'List FerrTrack issues in a project as compact rows (ref, title, status, assignee_id, priority, updated_at; use get_issue for the rest). Defaults to open issues, which excludes closed ones: pass status=closed or status=all to see them. Filter by status (open|in_progress|review|closed|all), kind (bug|feat|chore|docs), assignee. Results are paged: when has_more is true, call again with offset=next_offset. A page is cut to fit the response size limit and says so in `notice`.',
+    'List FerrTrack issues in a project as compact rows (ref, title, status, assignee_id, priority, updated_at; use get_issue for the rest). Defaults to open issues, which excludes closed ones: pass status=closed or status=all to see them. Filter by status (open|in_progress|review|closed|all), kind (bug|feat|chore|docs), assignee. Results are paged: when has_more is true, call again with offset=next_offset. `total` is the number of issues matching the filters across all pages, when the API reports it. A page is cut to fit the response size limit and says so in `notice`.',
     {
       project_slug: z.string().min(1).describe('Project slug'),
       status: z
