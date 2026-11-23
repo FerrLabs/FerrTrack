@@ -56,7 +56,7 @@ function serveBacklog(all: Issue[]): void {
     const matching = all.filter(
       (i) => status === 'all' || (status === 'open' ? i.status !== 'closed' : i.status === status),
     );
-    return Promise.resolve(respond(matching.slice(offset, offset + limit)));
+    return Promise.resolve(respond(matching.slice(offset, offset + Math.min(limit, 200))));
   });
 }
 
@@ -126,6 +126,32 @@ describe('list_track_issues', () => {
     const params = requestedParams();
     expect(params.get('limit')).toBe('11');
     expect(params.get('offset')).toBe('30');
+  });
+
+  it('never requests more than the API cap', async () => {
+    serveBacklog([]);
+    await call({ limit: 200 });
+
+    expect(requestedParams().get('limit')).toBe('200');
+  });
+
+  it('reports no more pages for exactly 200 open issues at limit=200', async () => {
+    serveBacklog(Array.from({ length: 200 }, (_, i) => issue(i + 1)));
+    const page = await call({ limit: 200 });
+
+    expect(page).toMatchObject({ count: 200, has_more: false, next_offset: null });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports more for 201 open issues at limit=200 and serves the rest on page two', async () => {
+    serveBacklog(Array.from({ length: 201 }, (_, i) => issue(i + 1)));
+    const first = await call({ limit: 200 });
+    const second = await call({ limit: 200, offset: first.next_offset ?? -1 });
+
+    expect(first).toMatchObject({ count: 200, has_more: true, next_offset: 200 });
+    expect(first.issues[199].ref).toBe('FT-200');
+    expect(second.issues.map((i) => i.ref)).toEqual(['FT-201']);
+    expect(second.has_more).toBe(false);
   });
 
   it('enumerates a backlog larger than one page exactly once by following next_offset', async () => {

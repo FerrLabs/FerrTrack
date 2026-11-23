@@ -18,7 +18,6 @@ interface PageInput {
   items: readonly Issue[];
   offset: number;
   limit: number;
-  fetchLimit: number;
 }
 
 const METADATA_RESERVE_BYTES = 400;
@@ -43,12 +42,12 @@ function rowsThatFit(rows: readonly IssueRow[], budget: number): number {
   return rows.length;
 }
 
-export function buildIssuePage({ items, offset, limit, fetchLimit }: PageInput): IssuePage {
+export function buildIssuePage({ items, offset, limit }: PageInput): IssuePage {
   const requested = items.slice(0, limit).map(toRow);
   const kept = rowsThatFit(requested, maxToolBytes());
   const issues = requested.slice(0, kept);
   const cutForSize = kept < requested.length;
-  const hasMore = cutForSize || items.length === fetchLimit;
+  const hasMore = cutForSize || items.length > limit;
 
   return {
     count: issues.length,

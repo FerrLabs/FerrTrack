@@ -31,17 +31,22 @@ export async function listProjectIssues(
   const token = await getToken();
   const limit = filters.limit ?? DEFAULT_LIMIT;
   const offset = filters.offset ?? 0;
-  const fetchLimit = Math.min(limit + 1, API_MAX_LIMIT);
-  const params = new URLSearchParams({
-    project: projectSlug,
-    status: filters.status ?? 'open',
-    limit: String(fetchLimit),
-    offset: String(offset),
-  });
-  if (filters.kind) params.set('kind', filters.kind);
-  if (filters.assignee_id) params.set('assignee', filters.assignee_id);
-  const items = await trackRequest<Issue[]>(`/issues?${params.toString()}`, { token });
-  return buildIssuePage({ items, offset, limit, fetchLimit });
+  const fetchRows = async (rowOffset: number, rowLimit: number): Promise<Issue[]> => {
+    const params = new URLSearchParams({
+      project: projectSlug,
+      status: filters.status ?? 'open',
+      limit: String(rowLimit),
+      offset: String(rowOffset),
+    });
+    if (filters.kind) params.set('kind', filters.kind);
+    if (filters.assignee_id) params.set('assignee', filters.assignee_id);
+    return trackRequest<Issue[]>(`/issues?${params.toString()}`, { token });
+  };
+
+  const items = await fetchRows(offset, Math.min(limit + 1, API_MAX_LIMIT));
+  const needsProbe = limit >= API_MAX_LIMIT && items.length === API_MAX_LIMIT;
+  const probe = needsProbe ? await fetchRows(offset + API_MAX_LIMIT, 1) : [];
+  return buildIssuePage({ items: [...items, ...probe], offset, limit });
 }
 
 function definedOnly(fields: Record<string, unknown>): Record<string, unknown> {
