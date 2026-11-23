@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.16.0] - 2026-11-23
+
+### Features
+
+- feat(mcp): report total in list_track_issues from X-Total-Count (#59)
+
 ## [10.15.1] - 2026-11-23
 
 ### Bug Fixes
