@@ -10,6 +10,7 @@ export interface IssuePage {
   offset: number;
   has_more: boolean;
   next_offset: number | null;
+  total?: number;
   notice?: string;
   issues: IssueRow[];
 }
@@ -18,6 +19,7 @@ interface PageInput {
   items: readonly Issue[];
   offset: number;
   limit: number;
+  total?: number;
 }
 
 const METADATA_RESERVE_BYTES = 400;
@@ -42,7 +44,7 @@ function rowsThatFit(rows: readonly IssueRow[], budget: number): number {
   return rows.length;
 }
 
-export function buildIssuePage({ items, offset, limit }: PageInput): IssuePage {
+export function buildIssuePage({ items, offset, limit, total }: PageInput): IssuePage {
   const requested = items.slice(0, limit).map(toRow);
   const kept = rowsThatFit(requested, maxToolBytes());
   const issues = requested.slice(0, kept);
@@ -54,9 +56,16 @@ export function buildIssuePage({ items, offset, limit }: PageInput): IssuePage {
     offset,
     has_more: hasMore,
     next_offset: hasMore ? offset + issues.length : null,
+    ...(total !== undefined && { total }),
     ...(cutForSize && {
       notice: `Page cut to ${issues.length} of ${requested.length} requested issues to fit the response size limit. Call again with offset=${offset + issues.length} for the rest, or pass a smaller limit.`,
     }),
     issues,
   };
+}
+
+export function parseTotalCount(header: string | null): number | undefined {
+  if (header === null || !/^\d+$/.test(header.trim())) return undefined;
+  const total = Number(header);
+  return Number.isSafeInteger(total) ? total : undefined;
 }

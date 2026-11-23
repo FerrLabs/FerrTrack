@@ -1,4 +1,4 @@
-import { apiRequest } from '@ferrlabs/mcp-core';
+import { apiRequest, apiRequestWithHeaders, type ApiResponse } from '@ferrlabs/mcp-core';
 
 export const TRACK_API_URL = process.env.FERRTRACK_API_URL ?? 'https://api.ferrtrack.com';
 
@@ -12,12 +12,21 @@ interface TrackRequestOptions {
   token: string;
 }
 
-export function trackRequest<T>(path: string, options: TrackRequestOptions): Promise<T> {
-  const { token, ...rest } = options;
-  return apiRequest<T>(path, {
-    ...rest,
-    token,
+function withTrackDefaults(options: TrackRequestOptions) {
+  return {
+    ...options,
     baseUrl: TRACK_API_URL,
     headers: { [API_VERSION_HEADER]: TRACK_API_VERSION },
-  });
+  };
+}
+
+export function trackRequest<T>(path: string, options: TrackRequestOptions): Promise<T> {
+  return apiRequest<T>(path, withTrackDefaults(options));
+}
+
+export function trackRequestWithHeaders<T>(
+  path: string,
+  options: TrackRequestOptions,
+): Promise<ApiResponse<T>> {
+  return apiRequestWithHeaders<T>(path, withTrackDefaults(options));
 }
