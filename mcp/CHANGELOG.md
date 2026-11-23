@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.15.1] - 2026-11-23
+
+### Bug Fixes
+
+- fix(mcp): detect the last list_track_issues page exactly at limit=200 (#58)
+
 ## [10.15.0] - 2026-11-20
 
 ### Features
