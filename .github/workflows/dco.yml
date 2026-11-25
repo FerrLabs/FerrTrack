@@ -9,4 +9,4 @@ permissions:
 
 jobs:
   sign-off:
-    uses: FerrLabs/.github/.github/workflows/reusable-dco.yml@7c847412991e70d60745c2a1c78ca76583cb397a # main
+    uses: FerrLabs/.github/.github/workflows/reusable-dco.yml@0a075f35954063ac01310b4e01543fd7009916e4 # main
