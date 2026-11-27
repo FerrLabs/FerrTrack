@@ -12,13 +12,20 @@ const mockServer = {
   }),
 } as unknown as McpServer;
 
-const DESTRUCTIVE = ['delete_issue', 'delete_issue_comment', 'delete_cycle', 'delete_milestone'];
+const DESTRUCTIVE = [
+  'delete_issue',
+  'delete_issue_comment',
+  'delete_issue_dependency',
+  'delete_cycle',
+  'delete_milestone',
+];
 const READ_ONLY = [
   'list_track_projects',
   'get_project',
   'list_track_issues',
   'get_issue',
   'list_issue_links',
+  'list_issue_dependencies',
   'list_issue_comments',
   'list_cycles',
   'list_cycle_issues',
@@ -32,6 +39,7 @@ describe('tool annotations', async () => {
   const { registerIssueDetailsTool } = await import('../issue-details.js');
   const { registerIssueTools } = await import('../issues.js');
   const { registerCommentTools } = await import('../comments.js');
+  const { registerDependencyTools } = await import('../dependencies.js');
   const { registerCycleTools } = await import('../cycles.js');
   const { registerMilestoneTools } = await import('../milestones.js');
   const { registerSearchTools } = await import('../search.js');
@@ -39,6 +47,7 @@ describe('tool annotations', async () => {
   registerIssueDetailsTool(mockServer);
   registerIssueTools(mockServer);
   registerCommentTools(mockServer);
+  registerDependencyTools(mockServer);
   registerCycleTools(mockServer);
   registerMilestoneTools(mockServer);
   registerSearchTools(mockServer);
@@ -62,6 +71,6 @@ describe('tool annotations', async () => {
   });
 
   it('covers every registered tool', () => {
-    expect(annotations.size).toBe(DESTRUCTIVE.length + READ_ONLY.length + 11);
+    expect(annotations.size).toBe(DESTRUCTIVE.length + READ_ONLY.length + 12);
   });
 });

@@ -14,16 +14,23 @@ const MESSAGES: Readonly<Record<string, string>> = {
     'The identity service is temporarily unavailable, so the deletion could not be authorized. Nothing was deleted; retry shortly.',
 };
 
-export async function withDeleteErrors<T>(action: () => Promise<T>): Promise<T> {
+export async function withMappedErrors<T>(
+  messages: Readonly<Record<string, string>>,
+  action: () => Promise<T>,
+): Promise<T> {
   try {
     return await action();
   } catch (error) {
     if (error instanceof ApiRequestError && error.code !== undefined) {
-      const message = MESSAGES[error.code];
+      const message = messages[error.code];
       if (message !== undefined) {
         throw new Error(`${error.code} (HTTP ${error.status}): ${message}`, { cause: error });
       }
     }
     throw error;
   }
+}
+
+export function withDeleteErrors<T>(action: () => Promise<T>): Promise<T> {
+  return withMappedErrors(MESSAGES, action);
 }
