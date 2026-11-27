@@ -37,8 +37,8 @@ function failure(status: number, code: string): Response {
   } as unknown as Response;
 }
 
-function lastCall(): { url: string; method: string; body: unknown; auth: string } {
-  const [url, init] = mockFetch.mock.calls[0];
+function request(): { url: string; method: string; body: unknown; auth: string } {
+  const [url, init] = mockFetch.mock.lastCall!;
   return {
     url: String(url),
     method: init.method ?? 'GET',
@@ -202,7 +202,7 @@ describe('FerrTrack API tools', () => {
   it.each(CASES)('$tool -> $method $url', async ({ tool, params, url, method, body }) => {
     const result = await handlers.get(tool)!(params);
 
-    const call = lastCall();
+    const call = request();
     expect(call.url).toBe(`${TRACK}${url}`);
     expect(call.method).toBe(method);
     expect(call.body).toEqual(body);
@@ -224,7 +224,7 @@ describe('FerrTrack API tools', () => {
 
     const result = await handlers.get(tool)!(params);
 
-    expect(lastCall()).toMatchObject({ url: `${TRACK}${url}`, method: 'DELETE' });
+    expect(request()).toMatchObject({ url: `${TRACK}${url}`, method: 'DELETE' });
     expect(result.content[0].text).toBe(text);
   });
 
@@ -247,7 +247,7 @@ describe('FerrTrack API tools', () => {
   it('read tools surface API failures instead of returning empty content', async () => {
     mockFetch.mockResolvedValue(failure(404, 'ISSUE_NOT_FOUND'));
 
-    await expect(handlers.get('get_issue')!({ issue_ref: 'FT-404' })).rejects.toThrow();
+    await expect(handlers.get('get_issue')!({ issue_ref: 'FT-404' })).rejects.toThrow(/nope/);
   });
 
   describe('input validation', () => {
