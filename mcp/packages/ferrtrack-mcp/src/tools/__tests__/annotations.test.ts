@@ -27,6 +27,7 @@ const READ_ONLY = [
   'list_issue_links',
   'list_issue_dependencies',
   'list_issue_comments',
+  'get_issue_metadata',
   'list_cycles',
   'list_cycle_issues',
   'list_milestones',
@@ -40,6 +41,7 @@ describe('tool annotations', async () => {
   const { registerIssueTools } = await import('../issues.js');
   const { registerCommentTools } = await import('../comments.js');
   const { registerDependencyTools } = await import('../dependencies.js');
+  const { registerIssueMetadataTools } = await import('../issue-metadata.js');
   const { registerCycleTools } = await import('../cycles.js');
   const { registerMilestoneTools } = await import('../milestones.js');
   const { registerSearchTools } = await import('../search.js');
@@ -48,6 +50,7 @@ describe('tool annotations', async () => {
   registerIssueTools(mockServer);
   registerCommentTools(mockServer);
   registerDependencyTools(mockServer);
+  registerIssueMetadataTools(mockServer);
   registerCycleTools(mockServer);
   registerMilestoneTools(mockServer);
   registerSearchTools(mockServer);
@@ -71,6 +74,6 @@ describe('tool annotations', async () => {
   });
 
   it('covers every registered tool', () => {
-    expect(annotations.size).toBe(DESTRUCTIVE.length + READ_ONLY.length + 12);
+    expect(annotations.size).toBe(DESTRUCTIVE.length + READ_ONLY.length + 13);
   });
 });

@@ -2,6 +2,7 @@ import type { McpServer } from '@ferrlabs/mcp-core';
 import { registerIssueDetailsTool } from './tools/issue-details.js';
 import { registerIssueTools } from './tools/issues.js';
 import { registerCommentTools } from './tools/comments.js';
+import { registerIssueMetadataTools } from './tools/issue-metadata.js';
 import { registerDependencyTools } from './tools/dependencies.js';
 import { registerProjectTools } from './tools/projects.js';
 import { registerCycleTools } from './tools/cycles.js';
@@ -15,6 +16,7 @@ export function register(server: McpServer): void {
   registerIssueDetailsTool(server);
   registerIssueTools(server);
   registerCommentTools(server);
+  registerIssueMetadataTools(server);
   registerDependencyTools(server);
   registerCycleTools(server);
   registerMilestoneTools(server);

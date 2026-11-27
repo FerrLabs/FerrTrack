@@ -30,6 +30,8 @@ const NEW: Record<string, string[]> = {
   list_issue_dependencies: ['issue_ref'],
   add_issue_dependency: ['issue_ref', 'other_ref', 'relation'],
   delete_issue_dependency: ['dependency_id', 'issue_ref'],
+  get_issue_metadata: ['issue_ref'],
+  set_issue_metadata: ['delete', 'issue_ref', 'set'],
 };
 
 describe('register', async () => {
