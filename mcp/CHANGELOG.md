@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.17.0] - 2026-11-27
+
+### Features
+
+- feat(mcp): add issue dependency tools (#64)
+
 ## [10.16.1] - 2026-11-24
 
 ### Bug Fixes
