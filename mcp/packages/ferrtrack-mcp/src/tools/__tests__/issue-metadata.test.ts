@@ -52,16 +52,27 @@ function lastCall(): {
 }
 
 const TRACK = 'https://api.ferrtrack.com';
-const ENTRY = {
-  key: 'github.issue',
-  value: { number: 7 },
-  written_by: 'u1',
-  written_by_handle: 'connected-app-o',
-  written_by_display_name: 'Connected app',
-  written_by_is_service: true,
-  written_via: 'connected_app',
-  created_at: '2026-11-27T10:00:00Z',
-  updated_at: '2026-11-27T10:00:00Z',
+const VIEW = {
+  items: [
+    {
+      key: 'github.issue',
+      namespace: 'github',
+      managed_by: 'GitHub',
+      value: { number: 7 },
+      writer: {
+        id: 'u1',
+        kind: 'integration',
+        name: 'Connected app',
+        handle: 'c',
+        avatar_url: null,
+      },
+      created_at: '2026-11-27T10:00:00Z',
+      updated_at: '2026-11-27T10:00:00Z',
+    },
+  ],
+  size_bytes: 12,
+  limit_bytes: 16384,
+  can_delete: true,
 };
 
 describe('issue metadata tools', () => {
@@ -69,7 +80,7 @@ describe('issue metadata tools', () => {
     vi.clearAllMocks();
     handlers.clear();
     schemas.clear();
-    mockFetch.mockResolvedValue(ok([ENTRY]));
+    mockFetch.mockResolvedValue(ok(VIEW));
     const { registerIssueMetadataTools } = await import('../issue-metadata.js');
     registerIssueMetadataTools(mockServer);
   });
@@ -81,7 +92,7 @@ describe('issue metadata tools', () => {
     expect(call.method).toBe('GET');
     expect(call.url).toBe(`${TRACK}/issues/FT-12/metadata`);
     expect(call.headers['x-ferrtrack-api-version']).toBe('2026-08-04');
-    expect(JSON.parse(result.content[0].text!)).toEqual([ENTRY]);
+    expect(JSON.parse(result.content[0].text!)).toEqual(VIEW);
   });
 
   it('encodes the issue ref in the path', async () => {
@@ -166,6 +177,7 @@ describe('issue metadata tools', () => {
     ['METADATA_VALUE_TOO_LARGE', 400, /4 KiB/],
     ['METADATA_TOTAL_TOO_LARGE', 400, /16 KiB/],
     ['METADATA_KEY_INVALID', 400, /metadata key is invalid/],
+    ['METADATA_NAMESPACE_RESERVED', 403, /integrations only/],
     ['ISSUE_NOT_FOUND', 404, /Issue not found/],
     ['TOKEN_SCOPE_REQUIRED', 403, /lacks the scope/],
   ])('maps the API code %s to an explanatory error', async (code, status, message) => {

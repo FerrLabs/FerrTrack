@@ -14,14 +14,25 @@ const key = z.string().max(MAX_KEY_LENGTH, KEY_MESSAGE).regex(KEY_PATTERN, KEY_M
 
 interface MetadataEntry {
   key: string;
+  namespace: string;
+  managed_by: string | null;
   value: unknown;
-  written_by: string;
-  written_by_handle: string;
-  written_by_display_name: string | null;
-  written_by_is_service: boolean;
-  written_via: 'person' | 'connected_app';
+  writer: {
+    id: string;
+    kind: 'user' | 'integration';
+    name: string;
+    handle: string;
+    avatar_url: string | null;
+  };
   created_at: string;
   updated_at: string;
+}
+
+interface MetadataView {
+  items: MetadataEntry[];
+  size_bytes: number;
+  limit_bytes: number;
+  can_delete: boolean;
 }
 
 const ERRORS: Readonly<Record<string, string>> = {
@@ -34,6 +45,8 @@ const ERRORS: Readonly<Record<string, string>> = {
     'The issue would hold over 16 KiB of metadata. Delete keys you no longer need in the same call. Nothing was changed.',
   METADATA_TOO_MANY_KEYS: `A call can change at most ${MAX_KEYS_PER_CALL} keys. Nothing was changed.`,
   METADATA_EMPTY_PATCH: 'Pass at least one key in set or delete.',
+  METADATA_NAMESPACE_RESERVED:
+    'The namespaces ferrfleet., github. and import. are written by integrations only: use an organization token, or pick another namespace. A key in a reserved namespace can still be deleted. Nothing was changed.',
   TOKEN_SCOPE_REQUIRED:
     'The token in use lacks the scope required to edit issues. Use a token that grants it.',
 };
@@ -67,7 +80,7 @@ export function buildPatch(
 export function registerIssueMetadataTools(server: McpServer) {
   server.tool(
     'get_issue_metadata',
-    'Read the metadata of a FerrTrack issue by its ref (e.g. "FT-12"): key/value data that tools attach to an issue and that is not shown on the issue itself. Returns every key with its JSON value, who wrote it (person or connected app) and when it was created and last changed. Keys are namespaced, like `ferrfleet.triage.fingerprint`.',
+    'Read the metadata of a FerrTrack issue by its ref (e.g. "FT-12"): key/value data that tools attach to an issue and that is not shown on the issue itself. Returns `items` (each with key, namespace, `managed_by`, JSON value, `writer` and `created_at` / `updated_at`), `size_bytes`, `limit_bytes` and `can_delete`. Keys are namespaced, like `ferrfleet.triage.fingerprint`.',
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
     },
@@ -75,7 +88,7 @@ export function registerIssueMetadataTools(server: McpServer) {
     async ({ issue_ref }) => {
       const token = await getToken();
       const entries = await withMappedErrors(ERRORS, () =>
-        trackRequest<MetadataEntry[]>(`/issues/${encodeURIComponent(issue_ref)}/metadata`, {
+        trackRequest<MetadataView>(`/issues/${encodeURIComponent(issue_ref)}/metadata`, {
           token,
         }),
       );
@@ -87,7 +100,7 @@ export function registerIssueMetadataTools(server: McpServer) {
 
   server.tool(
     'set_issue_metadata',
-    'Set and delete metadata keys on a FerrTrack issue in one atomic call: either every change applies or none does. Keys not mentioned are untouched. Keys are lowercase and namespaced (`ferrfleet.triage.fingerprint`, `github.issue`, `import.source`), at most 64 characters. Values are any JSON except null, at most 4 KiB each and 16 KiB per issue. Never store secrets or tokens here: anyone who can read the issue can read its metadata. Needs the same permission as editing the issue. Returns all metadata of the issue after the change.',
+    'Set and delete metadata keys on a FerrTrack issue in one atomic call: either every change applies or none does. Keys not mentioned are untouched. Keys are lowercase and namespaced (`ferrfleet.triage.fingerprint`, `github.issue`, `import.source`), at most 64 characters. Values are any JSON except null, at most 4 KiB each and 16 KiB per issue. Never store secrets or tokens here: anyone who can read the issue can read its metadata. Needs the same permission as editing the issue. The namespaces `ferrfleet.`, `github.` and `import.` can only be set by an integration (organization token); anyone who can edit may still delete their keys. Returns the metadata of the issue after the change, in the same shape as get_issue_metadata.',
     {
       issue_ref: z.string().min(1).describe('Issue ref, e.g. "FT-12"'),
       set: z
@@ -103,7 +116,7 @@ export function registerIssueMetadataTools(server: McpServer) {
         remove as string[] | undefined,
       );
       const entries = await withMappedErrors(ERRORS, () =>
-        trackRequest<MetadataEntry[]>(`/issues/${encodeURIComponent(issue_ref)}/metadata`, {
+        trackRequest<MetadataView>(`/issues/${encodeURIComponent(issue_ref)}/metadata`, {
           token,
           method: 'PATCH',
           body,
