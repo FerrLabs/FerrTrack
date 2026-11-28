@@ -4,6 +4,12 @@ All notable changes to `ferrtrack-mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.18.0] - 2026-11-28
+
+### Features
+
+- feat(mcp): add get_issue_metadata and set_issue_metadata (#66)
+
 ## [10.17.0] - 2026-11-27
 
 ### Features
